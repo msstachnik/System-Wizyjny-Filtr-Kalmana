@@ -1,4 +1,5 @@
-% System_Wizyjny_Offline_V2 - wersja z filtrem kalmana
+% System_Wizyjny_Offline_V3 - wersja z filtrem kalmana i odpornym
+% pobieraniem danych
 
 
 clc % 
@@ -9,15 +10,15 @@ klatki=24; % sta³a filmu ile klatek na sekundê
 dt = 1 / klatki; % okreslenie podstawy czasu
 odleglosc_wierzcholkow=20; % odleglosc w cm miêdzy wierzcho³kami kwadratu ma³ego - u¿ywane w kalibracji
 kalibracja_on_off = 'OFF'; % mo¿na napisaæ 'ON' wtedy wyœwietli siê okienko z kalibracj¹
-
+D_prog = 40; % maksymalna odloeg³osc pomiêdzy dwoma pobranymi punktami - warunek odsiewu szumu pomiarowego
 
 %% parametry filtru kalmana
 % e_a_sigma -  odchylenie standardowe szumu procesu okreœla jakie mo¿e
 % dzia³ac przyœpieszenie na kólke - czyli zak³óci poruszanie siê kólki
 % e_pomiar_sigma - odchylenie standardowe szumu pomiaru okresla jakich
 % spodziewany siê szumów pomiarze po³ozenia kólki
-e_a_sigma = 98 / 2 ; % [cm/s^2]          
-e_pomiar_sigma = 2; % [cm]
+e_a_sigma = 98 / 2;          
+e_pomiar_sigma = 2;
 
 %% inicjalizacja filtru kalmana
 % filtr kalmana rozbito na 2 filtry osobny dla wspó³¿ednej x i osobny dla
@@ -87,11 +88,12 @@ Vy(1) = 0;
     
     obraz_roznica=medfilt2(rgb2gray(film(i-4).cdata))-medfilt2(rgb2gray(film(i).cdata));
     imshow(rgb2gray(film(i-2).cdata))
+    
     wynik = obraz_roznica(5:end-5,5:end-5);%rgb2gray(obraz_roznica); % przepisanie obrazu ró¿nicowego czarno bia³ego do zmiennej wynik
     %%%%%%%%%%%%%%%%%%
     znacznik_logiczny = wynik>50;
     %%imshow(aa)
-    
+    sum_znaczmik_logiczny = sum(sum(znacznik_logiczny));
     
     
     %%%%%%%%%%%%%%%%%%
@@ -107,7 +109,7 @@ Vy(1) = 0;
     % wsp_y=mean( wsp_y); opcja gdyby by³y wskazane 2 lub 3 maksima to
     % wybierzemy uœrednion¹ wspó³rzedn¹
     %% wyliczanie pozycji pi³eczni + g³ówny warunek determinujacy czy wykryto czy te¿ nie pi³eczke
-    if sum(sum(znacznik_logiczny))<100 && sum(sum(znacznik_logiczny))>5  %max(max(wynik))>50 &&sum(poziom)>500 && sum(pion)>500 % za³o¿ono ¿e powierznia kulki ma mniej ni¿ 700 pix (w rzeczywistoœci dla rozdzielczoœci 800x600 ma ok.440 pix , je¿eli na obrazie suma pikseli bia³ych jest mniejsza ni¿ 700
+    if sum_znaczmik_logiczny<100 && sum_znaczmik_logiczny>5  %max(max(wynik))>50 &&sum(poziom)>500 && sum(pion)>500 % za³o¿ono ¿e powierznia kulki ma mniej ni¿ 700 pix (w rzeczywistoœci dla rozdzielczoœci 800x600 ma ok.440 pix , je¿eli na obrazie suma pikseli bia³ych jest mniejsza ni¿ 700
         k = k + 1; %inkrementacja licznika pozycji kólki
         time(k) = dt * i; %okreslenie czasu w którym dokonany jest pomiar
         
@@ -124,70 +126,96 @@ Vy(1) = 0;
         % okreslenie po³o¿enia w zale¿noœci od piksela
         X(k) = wsp_x * piks_to_cm;
         Y(k) = (wsp_y_max - wsp_y) * piks_to_cm;
+        %% Warunek akceptacji punktu startowego
+        
+        if k == 2
+            Droga = sqrt((X(2) - X(1))^2 + (Y(2) - Y(1))^2);
+            if Droga == 0 || Droga > D_prog %brak akceptacji po³o¿enia pocz¹tkowego
+                k = 1;
+                X(1) = X(2); % przypisanie bie¿¹cej pozycji jako pozycji referencyjnej
+                Y(1) = Y(2); % przypisanie bie¿¹cej pozycji jako pozycji referencyjnej
+                time(1) = time(2); 
+            else % w przeciwnym przypadku akceptacja punktu startowego i mozna liczyæ dalej
+                
+            end
+            
+        end
         
         %  prêdkoœæ mo¿na obliczyæ dopiero przy minimum dwóch próbkach
         if k >= 2
-            Vx(k) = (X(k) - X(k-1)) / (time(k) - time(k-1));
-            Vy(k) = (Y(k) - Y(k-1)) / (time(k) - time(k-1));
+            %% Warunek akceptacji ka¿dego nastêpnego punktu
+            Droga = sqrt((X(k) - X(k-1))^2 + (Y(k) - Y(k-1))^2);
+
+            if Droga == 0 || Droga > D_prog %brak akceptacji nowego punktu
+                X = X(1:end-1); % usuniêcie tego punktu z tablicy danych
+                Y = Y(1:end-1); % usuniêcie tego punktu z tablicy danych
+                time = time(1:end-1); % usuniêcie tego punktu z tablicy danych
+                k = k -1;
+            else % jeœli punkt jest zaakceptowany to normalne rpzetwarzanie
+                
+                Vx(k) = (X(k) - X(k-1)) / (time(k) - time(k-1));
+                Vy(k) = (Y(k) - Y(k-1)) / (time(k) - time(k-1));
+
+                % pokazanie na wizualizacji w którym punkcie jesteœmy
+                hold on
+                plot(wsp_x(1),wsp_y(1),'rs')
+                drawnow
+
+                %% filtracja kalmana online - mo¿e zachodziæ dopiero dla K >= 2
+                if k == 2 %inicjalizacja filtru i stanów
+                    % inicjalizacja poczatkowej prêdkosci i po³ozenia w filtrze
+                    % Klamana
+                    X_k(1) = X(1);
+                    Vx_k(1) = Vx(2) / 2;
+                    Y_k(1) = Y(1);
+                    Vy_k(1) = Vy(2) / 2;
+
+
+                    % zastanawiaæ moze czemu w inicjalizacji u¿yto pierwszej próbki
+                    % po³ozenia i drugiej próbki prêdkoœci. Teoretycznie
+                    % powinno siê u¿yæ równie¿ pierwszje próbki prêdkoœci jednak
+                    % prêdkoœæ w pierwszej próbce jest równa 0 i ciêzko estymowac
+                    % jej wartoœæ. Dlatego przyjêto za bardziej reprezentatywn¹
+                    % drug¹ próbkê prêdkoœci która w zasadzie siê wylicza na
+                    % podstawie 2 próbek po³o¿enia. prêdkoœc ta zosta³a
+                    % podzielona przez 2 aby niec z³agodziæ jej wp³yw na
+                    % pomiar
+                    x_state = [X_k(1); Vx_k(1)];
+                    y_state = [Y_k(1); Vy_k(1)];
+
+
+                end
+                %% w³asciwa filtracja kalmana
+                if k >= 2
+                   
+                    % obliczanie rzeczywistego przyrostu czasu
+                    dt_real = time(k) - time(k-1);
+
+                    % oblicznenie macierzy kowariancji szumu procesu
+                    Q = e_a_sigma^2 * [dt_real^4/4 dt_real^3/2; dt_real^3/2 dt_real^2];
+
+                    % obliczenie dynamicznej ze wzglêdu na przyrost czasu macierzy
+                    % stanu
+                    A = [1 dt_real
+                        0 1];
+
+                    % filracja kalmana
+                    [x_state, Px] = KalmanMS(A,B,C,R,Q,Px,0,x_state,X(k));
+                    [y_state, Py] = KalmanMS(A,B,C,R,Q,Py,0,y_state,Y(k)); 
+
+                    % wyciagniêcie z przestrzeni stanu pozycji i prêdkoœci
+                    X_k(k) = x_state(1);
+                    Vx_k(k) = x_state(2);
+                    Y_k(k) = y_state(1);
+                    Vy_k(k) = y_state(2);
+
+
+                end
+            end
         end
 
-
+            
         
-        % pokazanie na wizualizacji w którym punkcie jesteœmy
-        hold on
-        plot(wsp_x(1),wsp_y(1),'rs')
-        drawnow
-
-        %% filtracja kalmana online - mo¿e zachodziæ dopiero dla K >= 2
-        if k == 2 %inicjalizacja filtru i stanów
-            % inicjalizacja poczatkowej prêdkosci i po³ozenia w filtrze
-            % Klamana
-            X_k(1) = X(1);
-            Vx_k(1) = Vx(2) / 2;
-            Y_k(1) = Y(1);
-            Vy_k(1) = Vy(2) / 2;
-
-
-            % zastanawiaæ moze czemu w inicjalizacji u¿yto pierwszej próbki
-            % po³ozenia i drugiej próbki prêdkoœci. Teoretycznie
-            % powinno siê u¿yæ równie¿ pierwszje próbki prêdkoœci jednak
-            % prêdkoœæ w pierwszej próbce jest równa 0 i ciêzko estymowac
-            % jej wartoœæ. Dlatego przyjêto za bardziej reprezentatywn¹
-            % drug¹ próbkê prêdkoœci która w zasadzie siê wylicza na
-            % podstawie 2 próbek po³o¿enia
-            x_state = [X_k(1); Vx_k(1)];
-            y_state = [Y_k(1); Vy_k(1)];
-
-
-        end
-
-        if k >= 2
-            % w³asciwa filtracja kalmana
-
-            % obliczanie rzeczywistego przyrostu czasu
-            dt_real = time(k) - time(k-1);
-
-            % oblicznenie macierzy kowariancji szumu procesu
-            Q = e_a_sigma^2 * [dt_real^4/4 dt_real^3/2; dt_real^3/2 dt_real^2];
-
-            % obliczenie dynamicznej ze wzglêdu na przyrost czasu macierzy
-            % stanu
-            A = [1 dt_real
-                0 1];
-
-            % filracja kalmana
-            [x_state, Px] = KalmanMS(A,B,C,R,Q,Px,0,x_state,X(k));
-            [y_state, Py] = KalmanMS(A,B,C,R,Q,Py,0,y_state,Y(k)); 
-
-            % wyciagniêcie z przestrzeni stanu pozycji i prêdkoœci
-            X_k(k) = x_state(1);
-            Vx_k(k) = x_state(2);
-            Y_k(k) = y_state(1);
-            Vy_k(k) = y_state(2);
-
-
-        end
-
 
     end
 
