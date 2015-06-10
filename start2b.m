@@ -38,9 +38,11 @@ disp('Nr kl     X     Y    V[cm/s] S[cm] S_t') % wyœwietlenie nag³ówka do wyœwie
   image(film(round(nFrames/2)).cdata) % wyœwietlenie obrazu na którym zaznaczamu mysza 2 punkty na jednym poziomie znajduj¹ce siê w dwóch rogach ma³ego kwadratu
   % dziêki temu bedziemy wiedziæ ile pikseli jest pomiêdzy wierzcho³kami
   % kwadratu co odpowiada 20 cm odlegloœci w rzeczywistoœci
-  [x,y] = ginput(2); % pobranie wspó³rzednych dwóch punktów
-  dl_boku=abs(x(2)-x(1));
-  stala=abs(x(2)-x(1))/odleglosc_wierzcholkow; % obliczenie sta³ej ile pikseli przypada na 1 cm
+%   [x,y] = ginput(2); % pobranie wspó³rzednych dwóch punktów
+%     dl_boku=abs(x(2)-x(1));
+%   stala=abs(x(2)-x(1))/odleglosc_wierzcholkow; % obliczenie sta³ej ile pikseli przypada na 1 cm
+  dl_boku=32;
+  stala=32/20; % obliczenie sta³ej ile pikseli przypada na 1 cm
   close(gcf) % zamkniêcie otwartego okna
   
   znak=1; % znacznik do wywo³ania wafunki WHILE
@@ -112,17 +114,21 @@ disp('Nr kl     X     Y    V[cm/s] S[cm] S_t') % wyœwietlenie nag³ówka do wyœwie
             if s>0 && s<dl_boku/5 % jesli droga pokonana przez kulkê jest wieksza ni¿ 1/4 d³ bokuto traktujemy jako zak³ócenie i nie uwzglêdniamy
                 plot(wsp_x(1),wsp_y(1),'rs')
                 k=k+1;
-            %line([wsp_x_poprzednie(1), wsp_x(1)],[wsp_y_poprzednie(1), wsp_y(1)],'LineWidth',5,'Color','r');    
-            s=s/stala;
-            droga=droga+s;
-            V=s/(1/klatki);
-            %wsp zapamietane % przepisanie znalezionych wspó³rzendych do zapamietania (w celu w nastêpnym kroku uzycia ich jako poprzednie po³o¿enie) 
-            wsp_x_poprzednie=wsp_x(1);
-            wsp_y_poprzednie=wsp_y(1);
+                %line([wsp_x_poprzednie(1), wsp_x(1)],[wsp_y_poprzednie(1), wsp_y(1)],'LineWidth',5,'Color','r');    
+                s=s/stala;
+                droga=droga+s;
+                V=s/(1/klatki);
+                %wsp zapamietane % przepisanie znalezionych wspó³rzendych do zapamietania (w celu w nastêpnym kroku uzycia ich jako poprzednie po³o¿enie) 
+                wsp_x_poprzednie=wsp_x(1);
+                wsp_y_poprzednie=wsp_y(1);
             
                   druk(k,:)=[i,wsp_x(1),wsp_y(1),round(V),round(droga),round(s)]; % przygotowanie danych do wyœwietleniai stworzenie macierzy z danymi
                 disp(druk(k,:)) % wyœwietlenie berzacych wyników
+            else
+                disp(i)
             end
+            
+            
             
             
         end
