@@ -51,28 +51,8 @@ disp('Nr kl     X     Y    V[cm/s] S[cm] S_t') % wyœwietlenie nag³ówka do wyœwie
    %if i = 5 
        % odejmij od go³ej mapy
    %else
-    
-    data = film(i-4).cdata;
-    n =50;
-    
+       
     obraz_roznica=medfilt2(rgb2gray(film(i-4).cdata))-medfilt2(rgb2gray(film(i).cdata));
-
-    tic
-    data = data(1:n,1:n,:);
-    diff_im_1 = imsubtract(data(:,:,1), rgb2gray(data));
-    %filtracja medianowa w celu usuniêcia ewentualnych zak³óceñ 
-    diff_im_1 = medfilt2(diff_im_1, [3 3]);
-    % postac binarna z progiem 0.18
-    diff_im_1 = im2bw(diff_im_1,0.18);
-    
-    % domkniecie obiekty mniejsze niz 10pix
-    diff_im_1 = bwareaopen(diff_im_1,10);
-    
-    % etykietowanie obiektow
-    bw = bwlabel(diff_im_1, 8);
-%     stats = regionprops(diff_im_1, 'BoundingBox', 'Centroid');
-    stats = regionprops(bw, 'BoundingBox', 'Centroid');
-    time(i) = toc;
     imshow(rgb2gray(film(i-2).cdata))
     wynik=obraz_roznica(5:end-5,5:end-5);%rgb2gray(obraz_roznica); % przepisanie obrazu ró¿nicowego czarno bia³ego do zmiennej wynik
     hold on % wstrzymanie wykresu, mo¿na dorysoswywac inne elementy (znacznik drogi kulki)
@@ -141,7 +121,7 @@ disp('Nr kl     X     Y    V[cm/s] S[cm] S_t') % wyœwietlenie nag³ówka do wyœwie
             wsp_y_poprzednie=wsp_y(1);
             
                   druk(k,:)=[i,wsp_x(1),wsp_y(1),round(V),round(droga),round(s)]; % przygotowanie danych do wyœwietleniai stworzenie macierzy z danymi
-%                 disp(druk(k,:)) % wyœwietlenie berzacych wyników
+                disp(druk(k,:)) % wyœwietlenie berzacych wyników
             end
             
             
@@ -159,83 +139,80 @@ disp('Nr kl     X     Y    V[cm/s] S[cm] S_t') % wyœwietlenie nag³ówka do wyœwie
         %disp(druk(k,:)) % wyœwietlenie berzacych wyników
         drawnow % polecenie odswiezenia wykresu
     end
-
+    
     hold off
     
-  end
+end
 
-  hist(time(7:end),20)
-   median(time)
-% 
-% % wyliczenie wartoœci œredniej
-% ile_klatek=k;
-% V_sr=droga/(ile_klatek*1/klatki); 
-% 
-% disp('==================================')
-% disp('Wartoœc œrednia')
-% tekst=['Czas ruchu=',num2str(ile_klatek*1/klatki),' sekund'];
-% disp(tekst)
-% tekst=['Œrednia predkoœæ= ',num2str(V_sr),' cm/sek'];
-% disp(tekst)
-% tekst=['Przebyty dustans= ',num2str(droga), ' cm'];
-% disp(tekst)
-% close gcf
-% 
-% 
-% figure
-% 
-% plotyy(1:length(druk(:,4)),druk(:,4),1:length(druk(:,5)),druk(:,5)) % wyrysowanie danych na podwójnej osi OY
-% 
-% hold on
-% line([1 k],[V_sr V_sr],'color','r') % narysowanie wartoœci sredniejpredkoœci
-% legend('Prêdkoœæ chwilowa','Prêdkoœæ œrednia','Droga','Location','Best')
-% 
-% 
-% %++++++++++++++++++++++++++++++++++++++++++++++++++++
-% % predkoœæ
-% 
-% t=(druk(:,1)-druk(1,1))*1/( xyloObj.FrameRate);
-% v=medfilt1(druk(:,4),5); % filtracja medianowa prêdkoœci dla 5 wartoœci
-% 
-% 
-% %figure
-% f = fit(t(2:end),v(2:end),'poly1');
-% %plot(f,t(2:end),v(2:end));
-% a=f.p1;
-% b=f.p2;
-% wynik=roots([a,b]);
-% 
-% 
-% x=0:abs(wynik);
-% y=a*x+b;
-% 
-% figure
-% plot(t(2:end),v(2:end),'.r');
-% hold on
-% plot(x,y)
-% title('Estymacja prêdkoœci')
-% 
-% % =========================================================
-% % po³ozenie
-% xx=druk(:,2);%2);
-% yy=druk(:,3);%3);3
-% 
-% figure
-% f = fit(xx,yy,'poly1');
-% plot(f,xx,yy);
-% a=f.p1;
-% b=f.p2;
-% %wynik=roots([a,b]);
-% title('Wykres po³ozenia')
-% 
-% 
-% x=0:1000;
-% y=a*x+b;
-% 
-% figure
-% plot(xx,yy,'.r')
-% hold on
-% plot(x,y)
-% title('Estymacja po³ozenia')
-% 
+% wyliczenie wartoœci œredniej
+ile_klatek=k;
+V_sr=droga/(ile_klatek*1/klatki); 
+
+disp('==================================')
+disp('Wartoœc œrednia')
+tekst=['Czas ruchu=',num2str(ile_klatek*1/klatki),' sekund'];
+disp(tekst)
+tekst=['Œrednia predkoœæ= ',num2str(V_sr),' cm/sek'];
+disp(tekst)
+tekst=['Przebyty dustans= ',num2str(droga), ' cm'];
+disp(tekst)
+close gcf
+
+
+figure
+
+plotyy(1:length(druk(:,4)),druk(:,4),1:length(druk(:,5)),druk(:,5)) % wyrysowanie danych na podwójnej osi OY
+
+hold on
+line([1 k],[V_sr V_sr],'color','r') % narysowanie wartoœci sredniejpredkoœci
+legend('Prêdkoœæ chwilowa','Prêdkoœæ œrednia','Droga','Location','Best')
+
+
+%++++++++++++++++++++++++++++++++++++++++++++++++++++
+% predkoœæ
+
+t=(druk(:,1)-druk(1,1))*1/( xyloObj.FrameRate);
+v=medfilt1(druk(:,4),5); % filtracja medianowa prêdkoœci dla 5 wartoœci
+
+
+%figure
+f = fit(t(2:end),v(2:end),'poly1');
+%plot(f,t(2:end),v(2:end));
+a=f.p1;
+b=f.p2;
+wynik=roots([a,b]);
+
+
+x=0:abs(wynik);
+y=a*x+b;
+
+figure
+plot(t(2:end),v(2:end),'.r');
+hold on
+plot(x,y)
+title('Estymacja prêdkoœci')
+
+% =========================================================
+% po³ozenie
+xx=druk(:,2);%2);
+yy=druk(:,3);%3);3
+
+figure
+f = fit(xx,yy,'poly1');
+plot(f,xx,yy);
+a=f.p1;
+b=f.p2;
+%wynik=roots([a,b]);
+title('Wykres po³ozenia')
+
+
+x=0:1000;
+y=a*x+b;
+
+figure
+plot(xx,yy,'.r')
+hold on
+plot(x,y)
+title('Estymacja po³ozenia')
+
 
