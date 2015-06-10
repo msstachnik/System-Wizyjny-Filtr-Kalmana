@@ -1,5 +1,5 @@
 function [xe,P2,K]=KalmanMS(A,B,C,R,Q,P1,u,x,y)
-% function to calculate estymation of output using kalman filter.
+% function to calculate estymation of state using kalman filter.
 % Inputs:
 % A - A (state) matrix of state
 % B - B (control) matrix of state
@@ -11,7 +11,7 @@ function [xe,P2,K]=KalmanMS(A,B,C,R,Q,P1,u,x,y)
 % x - vector of state in time t0
 % y - vector of output in time t0 + dt
 % Outputs:
-% xe - estimated output
+% xe - estimated state
 % P2 - covariance of estimated state
 % K - Kalman Gain
 %  Last Update 2015-06-08 21:59 Mateusz Stachnik

@@ -3,7 +3,7 @@ clear all
 close all
 %% specyfikacja testu
 %maksymalny czas pobierania danych
-MaxTime = 20 ; 
+MaxTime = 10 ; 
 
 % parametry filtru kalmana
 % b³edy modelu

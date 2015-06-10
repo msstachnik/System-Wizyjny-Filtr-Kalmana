@@ -3,7 +3,7 @@ clear all
 close all
 %% specyfikacja testu
 %maksymalny czas pobierania danych
-MaxTime = 20 ; 
+MaxTime = 10 ; 
 
 % parametry filtru kalmana
 % b³edy modelu
@@ -68,6 +68,7 @@ C = [1 0];          % macierz sta³a w czasie
 % filtracja klamana
 
 for i = 2 : length(time)
+
     dt = time(i) - time(i-1); % model nie musi byæ z sta³ymi przyrostami czasu
     Q = [e_s_max^2 * dt^2 0
         0 e_a_max^2 * dt^2];
@@ -87,9 +88,10 @@ for i = 2 : length(time)
     
     Vx_pomiar(i) = (x_pomiar(i) - x_pomiar(i - 1)) / dt;
     Vy_pomiar(i) = (y_pomiar(i) - y_pomiar(i - 1)) / dt;
-    
+
     
 end
+
 figure(1);
 plot(x_pomiar, y_pomiar, 'r'); grid on; hold on
 plot(X,Y,'b');
