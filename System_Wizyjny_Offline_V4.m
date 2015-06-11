@@ -14,7 +14,7 @@ kalibracja_on_off = 'OFF'; % mo¿na napisaæ 'ON' wtedy wyœwietli siê okienko z ka
 D_prog = 40; % maksymalna odloeg³osc pomiêdzy dwoma pobranymi punktami - warunek odsiewu szumu pomiarowego
 srednica_pilki = 5; %srednica pilki w cm
 % poziom sigma okreœla kompromis pomiêdzy optymalizacj¹ obliczeniaow¹ o
-poziom_sigma = 2;  % poziom sigma nie powininem byæ mniejszy ni¿ 1.5
+poziom_sigma = 6;  % poziom sigma nie powininem byæ mniejszy ni¿ 1.5
 
 
 
@@ -103,8 +103,8 @@ for i=5:nFrames % 2:nFrames % rozmiar 4 to iloœæ klatek, rozmiar ma 4 elemnty [a
         wsp_y_okna = round(wsp_y_max - (Y_est / piks_to_cm));
         
         %sprawdzenia czy wspó³¿êdne nie znajduj¹ sie poza obszarem filmu
-        X_est = down_up_limit(wsp_x_okna, 1, wsp_x_max);
-        Y_est = down_up_limit(wsp_y_okna, 1, wsp_y_max);
+        wsp_x_okna = down_up_limit(wsp_x_okna, 1, wsp_x_max);
+        wsp_y_okna = down_up_limit(wsp_y_okna, 1, wsp_y_max);
 
         % bok okna wynika z statystyki. odchylenia stadardowe b³edu pozycji
         % z macierzy stany wynosz¹ Px(1,1), prêdkosci Px(2,2), a b³¹d
