@@ -1,6 +1,8 @@
-% System_Wizyjny_Offline_V4 - wersja z filtrem kalmana i odpornym
+% System_Wizyjny_Offline_V5 - wersja z filtrem kalmana i odpornym
 % pobieraniem danych oraz optymalizacj¹ okna na podstawie poziomu sigma
 % procesu
+% zmiana okreœlania orientacji pi³eczki + napisanie do tego zewnêtrznej
+% funkcji
 
 
 clc % 
@@ -87,7 +89,7 @@ k=0; % zmienna do numeracji kilejnych po³o¿eñ kulki
 Vx(1) = 0;
 Vy(1) = 0;
 
-for i=5:nFrames % 2:nFrames % rozmiar 4 to iloœæ klatek, rozmiar ma 4 elemnty [a,b,c,d], a i b wys i szer, c- iloœæ wartw (3 dla RGB), d - iloœc klatek
+for i=2:nFrames % 2:nFrames % rozmiar 4 to iloœæ klatek, rozmiar ma 4 elemnty [a,b,c,d], a i b wys i szer, c- iloœæ wartw (3 dla RGB), d - iloœc klatek
     % zaczynami do 2 bo bierzemy klatke wczesniejsz¹ (2-1) i bierz¹c¹ 2
     %% optymalizacja okan pobierajacego dane
     
@@ -145,52 +147,25 @@ for i=5:nFrames % 2:nFrames % rozmiar 4 to iloœæ klatek, rozmiar ma 4 elemnty [a
     
     
     
-    %% pobieranie obrazu + konwertowanie go na macierz zanczników logicznych
-    % które nastepnie s¹ u¿ywane w warunku sprawdzajacycm wykrycie obrazu
-%     
-%     obraz_badany = film(i).cdata(wsp_xmin:wsp_xmax,wsp_ymin:wsp_ymax,:);
-%     obraz_referencyjny = film(i - 4).cdata(wsp_xmin:wsp_xmax,wsp_ymin:wsp_ymax,:);
-    obraz_badany = film(i).cdata(wsp_ymin:wsp_ymax,wsp_xmin:wsp_xmax,:);
-    obraz_referencyjny = film(i - 4).cdata(wsp_ymin:wsp_ymax,wsp_xmin:wsp_xmax,:);
-    obraz_roznica=medfilt2(rgb2gray(obraz_referencyjny))-medfilt2(rgb2gray(obraz_badany));
-    imshow(rgb2gray(obraz_badany))
-    
-%     obraz_roznica = obraz_roznica(5:end-5,5:end-5);%rgb2gray(obraz_roznica); % przepisanie obrazu ró¿nicowego czarno bia³ego do zmiennej wynik
-    %%%%%%%%%%%%%%%%%%
-    znacznik_logiczny = obraz_roznica>50;
-    %%imshow(aa)
-    sum_znaczmik_logiczny = sum(sum(znacznik_logiczny));
-    
-    
-    %%%%%%%%%%%%%%%%%%
-    % szukanie wspó³rzednych kulki, która w obrazie bw jest bia³a - szukamy
-    % miejsca gdzie jest najwiêcej pikseli bia³ych które nale¿a do kulki
-    %poziom=sum(aa); %sum((wynik)) sumowanie iloœci pikseli (bo piksele maj¹ wartoœci 0 i 1) w poziomie
-    %wsp_x=find(poziom==max(poziom));% szukanie miejsca indeksu gdzie w wektorze w którym sa sumy dla ka¿ej kolumny wynik wystêpujê maximum
-    % wsp_x=mean( wsp_x); opcja gdyby by³y wskazane 2 lub 3 maksima to
-    % wybierzemy uœrednion¹ wspó³rzedn¹
+    %% pobieranie obrazu w zoptymalizowanym oknie + znajodwanie pozcyji kulki
 
-    %pion=sum(aa');%sum(wynik') sumowanie iloœci pikseli (bo piksele maj¹ wartoœci 0 i 1) w pionie (naprawde w poziomie ale macierz jest obrócona - transponowana  co daje ten sam efekt)
-    %wsp_y=find(pion==max(pion));  % szukanie miejsca indeksu gdzie w wektorze w którym sa sumy dla ka¿ej kolumny wynik wystêpujê maximum
-    % wsp_y=mean( wsp_y); opcja gdyby by³y wskazane 2 lub 3 maksima to
-    % wybierzemy uœrednion¹ wspó³rzedn¹
-    %% wyliczanie pozycji pi³eczni + g³ówny warunek determinujacy czy wykryto czy te¿ nie pi³eczke
-    if sum_znaczmik_logiczny<100 && sum_znaczmik_logiczny>5  %max(max(wynik))>50 &&sum(poziom)>500 && sum(pion)>500 % za³o¿ono ¿e powierznia kulki ma mniej ni¿ 700 pix (w rzeczywistoœci dla rozdzielczoœci 800x600 ma ok.440 pix , je¿eli na obrazie suma pikseli bia³ych jest mniejsza ni¿ 700
+
+    obraz_badany = film(i).cdata(wsp_ymin:wsp_ymax,wsp_xmin:wsp_xmax,:);
+    obraz_referencyjny = film(1).cdata(wsp_ymin:wsp_ymax,wsp_xmin:wsp_xmax,:);
+    obraz_roznica=medfilt2(rgb2gray(obraz_referencyjny))-medfilt2(rgb2gray(obraz_badany));
+    imshow(obraz_badany)
+    %funkcja napisana do wykrywania pozycji kulki
+    [raw_x, raw_y] = image2ball_pos(obraz_roznica);
+    
+    % konwersja na pozycje absolutn¹ w pikselach - nale¿y dodaæ po³o¿enie
+    % pocz¹tku zoptymalizowanego obrazu
+    wsp_x=wsp_xmin + raw_x;
+    wsp_y=wsp_ymin + raw_y;
+
+    %% sprawdzenie czy pozycja jest 
+    if not(isnan(wsp_x + wsp_y)) 
         k = k + 1; %inkrementacja licznika pozycji kólki
         time(k) = dt * i; %okreslenie czasu w którym dokonany jest pomiar
-        
-        % szukanie wspó³rzednych kulki, która w obrazie bw jest bia³a - szukamy
-        % miejsca gdzie jest najwiêcej pikseli bia³ych które nale¿a do kulki
-        poziom=sum((znacznik_logiczny)); %sum((wynik)) sumowanie iloœci pikseli (bo piksele maj¹ wartoœci 0 i 1) w poziomie
-        wsp_x=find(poziom==max(poziom));% szukanie miejsca indeksu gdzie w wektorze w którym sa sumy dla ka¿ej kolumny wynik wystêpujê maximum
-        wsp_x=wsp_xmin + mean( wsp_x);
-%         figure(2)
-%         image(obraz_roznica);
-%         figure(1)
-        
-        pion=sum(znacznik_logiczny,2);%sum(wynik') sumowanie iloœci pikseli (bo piksele maj¹ wartoœci 0 i 1) w pionie (naprawde w poziomie ale macierz jest obrócona - transponowana  co daje ten sam efekt)
-        wsp_y=find(pion==max(pion));  % szukanie miejsca indeksu gdzie w wektorze w którym sa sumy dla ka¿ej kolumny wynik wystêpujê maximum
-        wsp_y=wsp_ymin + mean( wsp_y);
         
         % okreslenie po³o¿enia w zale¿noœci od piksela
         X(k) = wsp_x * piks_to_cm;
