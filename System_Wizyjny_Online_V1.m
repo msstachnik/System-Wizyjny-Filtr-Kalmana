@@ -59,7 +59,13 @@ while(time(i) <MaxTime)
     vid.FramesAcquired
     data = getsnapshot(vid);
     time(i) = toc;
-     
+    
+    if i == 2 % pobieranie rozmiarów okna - wsytarczy tylko raz
+        size_film = size(obraz_badany);
+        wsp_x_max = size_film(2);
+        wsp_y_max = size_film(1);
+    end 
+    
     % wyciagniecie obiektow koloru czerwonego poprzez odejmowanie od siebie
     % obrazow
     obraz_badany = imsubtract(data(:,:,1), rgb2gray(data));
@@ -73,7 +79,7 @@ while(time(i) <MaxTime)
     
     hold on
     
-    %oznaczanie
+    %% jêsli wykryto pozycje kólki to zapisaæ
     if not(isnan(wsp_x + wsp_y)) 
         
         k = k + 1; %inkrementacja licznika pozycji kólki
