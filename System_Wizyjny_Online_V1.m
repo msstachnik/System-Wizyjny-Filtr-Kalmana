@@ -6,6 +6,7 @@ close all
 %% specyfikacja testu
 MaxTime = 20 ; %maksymalny czas pobierania danych
 display_figure = 'ON'; % jeœli 'ON' to wyœwietlany jest pogl¹d aktualnej pozycji
+odleglosc_wierzcholkow=20; % odleglosc w cm miêdzy wierzcho³kami kwadratu ma³ego - u¿ywane w kalibracji
 
 
 %% definicja po³¹czenia
@@ -48,21 +49,22 @@ k=0; % zmienna do numeracji kilejnych po³o¿eñ kulki
 i=0; % znacznik numeru pobranego obrazu
 
 %inicjalizacja czasu
+time(1) = 0;
 tic
 %% pobieranie danych
-while(vid.FramesAcquired<=100)
+while(time(i) <MaxTime)
     i=i+1;
-    time(i) = toc;
+    
     
     vid.FramesAcquired
     data = getsnapshot(vid);
-    
+    time(i) = toc;
      
     % wyciagniecie obiektow koloru czerwonego poprzez odejmowanie od siebie
     % obrazow
     obraz_badany = imsubtract(data(:,:,1), rgb2gray(data));
     %funkcja napisana do wykrywania pozycji kulki
-    [raw_x, raw_y] = image2ball_pos(obraz_badany);
+    [wsp_x, wsp_y] = image2ball_pos(obraz_badany);
     
     if strcmp(display_figure, 'ON')
         imshow(data)
@@ -75,15 +77,15 @@ while(vid.FramesAcquired<=100)
     if not(isnan(wsp_x + wsp_y)) 
         
         k = k + 1; %inkrementacja licznika pozycji kólki
-        time(k) = time(i);
+        time_ball(k) = time(i);
 
         X(k) = wsp_x * piks_to_cm;
         Y(k) = (wsp_y_max - wsp_y) * piks_to_cm;   
 
         %  prêdkoœæ mo¿na obliczyæ dopiero przy minimum dwóch próbkach
         if k >= 2
-            Vx(k) = (X(k) - X(k-1)) / (time(k) - time(k-1));
-            Vy(k) = (Y(k) - Y(k-1)) / (time(k) - time(k-1));
+            Vx(k) = (X(k) - X(k-1)) / (time_ball(k) - time_ball(k-1));
+            Vy(k) = (Y(k) - Y(k-1)) / (time_ball(k) - time_ball(k-1));
         end
         
         
@@ -108,14 +110,14 @@ ylabel('Y [cm]');
 
 figure
 subplot(3,1,1)
-plot(time,Vx)
+plot(time_ball,Vx)
 title('Prêdkoœæi w osi X')
 xlabel('time [s]');
 ylabel('V_X [cm]');
 
 
 subplot(3,1,2)
-plot(time,Vy)
+plot(time_ball,Vy)
 title('Prêdkoœæi w osi Y')
 xlabel('time [s]');
 ylabel('V_Y [cm]');
@@ -124,7 +126,7 @@ V_abs = sqrt(Vx.^2 + Vy.^2);
 
 
 subplot(3,1,3)
-plot(time,V_abs)
+plot(time_ball,V_abs)
 title('Prêdkoœæi absolutna')
 xlabel('time [s]');
 ylabel('V [cm]');

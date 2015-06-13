@@ -26,8 +26,8 @@ for i = 1 : nFrames
 end
 %% pobieranie rozmiarów okna
 size_film = size(film(1).cdata);
-wsp_x_max = size_film(1);
-wsp_y_max = size_film(2);
+wsp_x_max = size_film(2);
+wsp_y_max = size_film(1);
 
 
 
